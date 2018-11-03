@@ -1,0 +1,5 @@
+# ignore sync file with globbing
+sync*
+prepare_data_for_run.bash
+test9
+time.log

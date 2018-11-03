@@ -1,0 +1,218 @@
+#!/bin/bash
+
+# ####test_demo_testf.bash
+# #!/bin/bash
+# 
+# # Usage:
+# # ./test_demo_testf.bash
+# 
+# # Use the -o to override the check on the test dir
+# # ./test_demo_testf.bash -o
+#
+# source ./testf.bash
+# 
+# test1(){
+#     echo "hello"
+# }
+# 
+# test2(){
+#     echo "world"
+# }
+# 
+# opt="$1"
+# run_tests "test1" "test2"
+
+
+echo_start(){
+    echo "$1 ============================="
+}
+
+get_bwd(){
+    # bwd: base working dir
+    # cwd: current working dir
+    cwd=$(realpath .)
+    : ${bwd=$cwd}
+}
+
+init_time_log(){
+    fpath_log="$bwd"/time.log
+    if [ -f $fpath_log ]
+        then
+        if [ "-o" != "$opt" ]
+            then
+            echo "Cannot create file:: File $fpath_log exists. Exit."
+            exit 1
+        fi
+        
+        rm $fpath_log
+    fi
+
+    touch $fpath_log
+}
+
+log_datetime(){
+    datef=`date '+%Y%m%d.%H%M%S'`
+    echo "$1$datef" >> $fpath_log
+}
+
+init_dir(){
+    dpath_test="$bwd"/test9
+    if [ -e $dpath_test ]
+        then
+        if [ "-o" != "$opt" ]
+            then
+            echo "Cannot create dir:: Dir (or file) $dpath_test exists. Exit."
+            exit 1
+        fi
+        
+        rm -r $dpath_test
+    fi
+    
+    mkdir $dpath_test
+    #cd $dpath_test
+}
+
+init_script_dir(){
+    # to be overwritten by the calling script
+    init_dir
+}
+
+init_script_extra(){
+    # to be overwritten by the calling script
+    :
+}
+
+finish_script_extra(){
+    # to be overwritten by the calling script
+    :
+}
+
+init_script(){
+    echo_start "Start script $0"
+    get_bwd
+    init_time_log
+    log_datetime "Start script $0 : "  
+    init_script_dir  
+    init_script_extra
+}
+
+finish_script(){
+    finish_script_extra
+    echo_start "Finish script $0"
+    log_datetime "Finish script $0 : "
+}
+
+init_test_extra(){
+    # to be overwritten by the calling script
+    :
+}
+
+finish_test_extra(){
+    # to be overwritten by the calling script
+    :
+}
+
+init_test(){
+    echo_start "Start $1 : "
+    log_datetime "Start $1 : "
+    init_test_extra
+}
+
+finish_test(){
+    finish_test_extra
+    log_datetime "Finish $1 : "
+}
+
+run_tests(){
+    init_script
+
+    for test in "$@"
+        do
+        init_test "$test"
+        $test
+        finish_test "$test"
+    done
+
+    finish_script
+}
+
+get_first_n_words_by_space(){
+    line="$1"
+    n="$2"
+    echo $(printf "$line" | cut -d " " -f 1-"$n")
+}
+
+assert_equal_str(){
+    expected=$(printf "$1")
+    actual="$2"
+    if [ "$expected" == "$actual" ]
+        then
+        echo Pass
+        return 0
+    fi
+
+    echo "Fail: $expected != $actual"
+    return 64
+}
+
+assert_equal_num(){
+    expected="$1"
+    actual="$2"
+
+    if [[ "y" == "y$expected" && "y"=="y$actual" ]]
+        then
+            echo "ERR:: Expt: expected is empty, Actl: actual is empty"
+        return 1
+    fi
+    
+    if [ "y" == "y$expected" ]
+        then
+        echo "ERR:: Expt: expected is empty"
+        return 1
+    fi
+    
+    if [ "y" == "y$actual" ]
+        then
+        echo "ERR:: Actl: actual is empty"
+        return 1
+    fi
+    
+    if [ $expected -eq $actual ]
+        then
+        echo Pass
+        return 0
+    fi
+
+    echo "Fail: $expected != $actual"
+    return 64 
+}
+
+assert_in_str(){
+    if [ "y" == "y$1" ]
+        then
+        echo "ERR:: Expt: is empty."
+        return 1
+    fi
+
+    expt=$(printf "$1")
+    # grep the expected in the actual
+    printf "$2" | grep -Eq "$expt"
+    retval=$?
+    
+    if [ 0 -eq $retval ]
+        then
+        echo Pass
+        return 0
+    fi
+
+    if [ 1 -eq $retval ]
+        then
+        echo "Fail: $1 IS NOT in $2"
+        return 64
+    fi
+}
+
+test1(){
+    # call the tested script
+    :
+}
